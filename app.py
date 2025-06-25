@@ -1,34 +1,10 @@
 import streamlit as st
 import requests
+from datetime import datetime, timedelta, date
 import base64
-from datetime import datetime, timedelta
-from streamlit_javascript import st_javascript
 
 # ----------------- PAGE SETUP -----------------
 st.set_page_config(page_title="ANUJA - Smart Farming Partner", page_icon="🌾", layout="wide")
-
-# ----------------- BACKGROUND -----------------
-def add_bg_image():
-    with open("C:\\Users\\ACER\\Downloads\\jain.jpg", "rb") as f:
-        encoded = base64.b64encode(f.read()).decode()
-    st.markdown(f"""
-    <style>
-    .stApp {{
-        background-image: url("data:image/jpg;base64,{encoded}");
-        background-size: cover;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-        background-blend-mode: lighten;
-    }}
-    .block-container {{
-        background-color: rgba(255, 255, 255, 0.85);
-        padding: 2rem;
-        border-radius: 15px;
-    }}
-    </style>
-    """, unsafe_allow_html=True)
-
-add_bg_image()
 
 # ----------------- WEATHER API -----------------
 def get_weather_from_coords(lat, lon):
@@ -46,21 +22,6 @@ def get_weather_from_coords(lat, lon):
     except:
         return None
 
-# ----------------- LOCATION FETCH -----------------
-coords = st_javascript("""await new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            resolve({
-                lat: position.coords.latitude,
-                lon: position.coords.longitude
-            });
-        },
-        (err) => {
-            resolve(null);
-        }
-    );
-})""")
-
 # ----------------- SIDEBAR INPUTS -----------------
 with st.sidebar:
     st.header("🔍 Field & Crop Inputs")
@@ -69,6 +30,7 @@ with st.sidebar:
     temperature = st.number_input("Ambient Temp (°C)", 0.0, 50.0, 25.0)
     crop = st.selectbox("🌾 Select Crop", ["Wheat", "Rice", "Tomato", "Soybean", "Sugarcane", "Millets"])
     plant_date = st.date_input("📆 Date of Planting", value=datetime.today())
+    city = st.text_input("🌍 Enter Your City (for Weather)")
 
 # ----------------- MAIN TITLE -----------------
 st.title("🌱 ANUJA – Your Smart Farming Partner")
@@ -85,10 +47,8 @@ with colA:
     st.write(f"• Temp: **{temperature} °C**")
     st.write(f"• Crop: **{crop}**")
     st.write(f"• Planting Date: **{plant_date.strftime('%d %b %Y')}**")
-    if coords:
-        st.write(f"• Location: 🌐 Lat: {coords['lat']:.2f}, Lon: {coords['lon']:.2f}")
-    else:
-        st.write("• Location: Not detected")
+    if city:
+        st.write(f"• City: **{city}**")
 
 with colB:
     st.subheader("🧠 Smart Suggestions")
@@ -141,9 +101,7 @@ else:
 # ----------------- FUTURE WEEK PLANNER -----------------
 st.markdown("---")
 st.subheader("🗓️ Future Pest & Fertilizer Planner")
-from datetime import date  # add at the top if not present
 current_week = (date.today() - plant_date).days // 7
-
 
 for i in range(1, 5):
     st.markdown(f"**Week {i}:**")
@@ -162,9 +120,16 @@ for i in range(1, 5):
     st.markdown("---")
 
 # ----------------- WEATHER & SEED SUGGESTION -----------------
-if coords:
-    weather = get_weather_from_coords(coords['lat'], coords['lon'])
-    if weather:
+if city:
+    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid=261f98e168bbce0a092c3bd323031d7c&units=metric"
+    res = requests.get(url)
+    if res.status_code == 200:
+        data = res.json()
+        weather = {
+            "temp": data["main"]["temp"],
+            "humidity": data["main"]["humidity"],
+            "desc": data["weather"][0]["description"]
+        }
         st.subheader("☁️ Live Weather Report")
         st.success(f"{weather['temp']}°C, {weather['humidity']}% humidity, {weather['desc'].title()}")
 
@@ -178,7 +143,7 @@ if coords:
     else:
         st.error("❌ Could not fetch weather from location.")
 else:
-    st.warning("📍 Allow browser location access for weather detection.")
+    st.warning("📍 Enter a valid city to detect weather.")
 
 # ----------------- WEED IMAGE UPLOAD -----------------
 st.markdown("---")
@@ -192,5 +157,3 @@ if upload:
 # ----------------- FOOTER -----------------
 st.markdown("---")
 st.caption("🚀 Built with ❤️ using Streamlit | Project ANUJA – Smart Agriculture 2025")
-
-
