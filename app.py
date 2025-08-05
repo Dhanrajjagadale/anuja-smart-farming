@@ -1,18 +1,18 @@
 import streamlit as st
 import requests
-from datetime import datetime, timedelta, date
+from datetime import datetime, date
 
 # ----------------- PAGE SETUP -----------------
 st.set_page_config(page_title="Smart Farming Partner", page_icon="🌾", layout="wide")
 
 # ----------------- WEATHER API -----------------
-def get_weather_from_coords(lat, lon):
-    api_key = "261f98e168bbce0a092c3bd323031d7c"
-    url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
+def get_weather(city):
+    api_key = "261f98e168bbce0a092c3bd323031d7c"  # Replace with your valid API key
+    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
     try:
-        response = requests.get(url)
-        data = response.json()
-        if data.get("main"):
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
             return {
                 "temp": data["main"]["temp"],
                 "humidity": data["main"]["humidity"],
@@ -20,6 +20,7 @@ def get_weather_from_coords(lat, lon):
             }
     except:
         return None
+    return None
 
 # ----------------- SIDEBAR INPUTS -----------------
 with st.sidebar:
@@ -52,6 +53,7 @@ with colA:
 with colB:
     st.subheader("🧠 Smart Suggestions")
 
+    # pH Suggestions
     if ph < 6:
         st.warning("🔬 Soil acidic: consider treating with lime or urea.")
     elif ph > 8:
@@ -59,14 +61,17 @@ with colB:
     else:
         st.success("✅ pH is balanced.")
 
+    # Moisture Suggestions
     if moisture < 30:
         st.info("💧 Moisture low: irrigation recommended.")
     else:
         st.success("✅ Moisture adequate.")
 
+    # Temperature Suggestions
     if temperature > 35:
         st.warning("🔥 High temp: monitor crop water needs.")
 
+    # Fertilizer Guide
     st.subheader("🪴 Fertilizer Guide")
     if ph < 6:
         st.info("Apply lime-based fertilizer (e.g., calcium carbonate).")
@@ -120,15 +125,8 @@ for i in range(1, 5):
 
 # ----------------- WEATHER & SEED SUGGESTION -----------------
 if city:
-    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid=261f98e168bbce0a092c3bd323031d7c&units=metric"
-    res = requests.get(url)
-    if res.status_code == 200:
-        data = res.json()
-        weather = {
-            "temp": data["main"]["temp"],
-            "humidity": data["main"]["humidity"],
-            "desc": data["weather"][0]["description"]
-        }
+    weather = get_weather(city)
+    if weather:
         st.subheader("☁️ Live Weather Report")
         st.success(f"{weather['temp']}°C, {weather['humidity']}% humidity, {weather['desc'].title()}")
 
@@ -147,12 +145,14 @@ else:
 # ----------------- WEED IMAGE UPLOAD -----------------
 st.markdown("---")
 st.subheader("📸 Weed Detection & Pesticide Advice")
-upload = st.file_uploader("Upload weed image (jpg/png)", type=["jpg","jpeg","png"])
-if upload:
-    st.image(upload, caption="Uploaded Image", use_container_width=True)
+upload = st.file_uploader("Upload weed image (jpg/png)", type=["jpg", "jpeg", "png"])
+
+if upload is not None:
+    st.image(upload.getvalue(), caption="Uploaded Image", use_container_width=True)
     st.warning("Detected weed: *General Broadleaf Weed*")
     st.info("Suggested pesticide: Glyphosate or 2,4-D")
 
 # ----------------- FOOTER -----------------
 st.markdown("---")
 st.caption("🚀 Built with ❤️ using Streamlit | Smart Farming Partner 2025")
+
