@@ -1,5 +1,6 @@
+HEAD
 streamlit
 requests
-ultralytics
-opencv-python
-Pillow
+streamlit
+pillow
+8465851
