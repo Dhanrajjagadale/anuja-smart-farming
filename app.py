@@ -1,28 +1,29 @@
 import streamlit as st
 import requests
 from datetime import datetime, date
+from PIL import Image
 
-# ----------------- PAGE SETUP -----------------
+# -------------- PAGE CONFIG -----------------
 st.set_page_config(page_title="Smart Farming Partner", page_icon="🌾", layout="wide")
 
-# ----------------- WEATHER API -----------------
+# -------------- WEATHER FUNCTION -----------------
 def get_weather(city):
-    api_key = "261f98e168bbce0a092c3bd323031d7c"  # Replace with your valid API key
+    api_key = "261f98e168bbce0a092c3bd323031d7c"  # Replace with your secure key
     url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
     try:
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
+        res = requests.get(url)
+        if res.status_code == 200:
+            data = res.json()
             return {
                 "temp": data["main"]["temp"],
                 "humidity": data["main"]["humidity"],
                 "desc": data["weather"][0]["description"]
             }
     except:
-        return None
+        pass
     return None
 
-# ----------------- SIDEBAR INPUTS -----------------
+# -------------- SIDEBAR -----------------
 with st.sidebar:
     st.header("🔍 Field & Crop Inputs")
     ph = st.slider("Soil pH", 3.5, 9.0, 6.5)
@@ -30,129 +31,129 @@ with st.sidebar:
     temperature = st.number_input("Ambient Temp (°C)", 0.0, 50.0, 25.0)
     crop = st.selectbox("🌾 Select Crop", ["Wheat", "Rice", "Tomato", "Soybean", "Sugarcane", "Millets"])
     plant_date = st.date_input("📆 Date of Planting", value=datetime.today())
-    city = st.text_input("🌍 Enter Your City (for Weather)")
+    city = st.text_input("🌍 Enter Your City")
 
-# ----------------- MAIN TITLE -----------------
+# -------------- MAIN -----------------
 st.title("🌱 Smart Farming Partner")
 st.markdown("#### Making intelligent, location-based, and crop-specific farming decisions.")
 st.markdown("---")
 
-# ----------------- SMART SUGGESTIONS -----------------
-colA, colB = st.columns(2)
+col1, col2 = st.columns(2)
 
-with colA:
+with col1:
     st.subheader("📥 Input Summary")
     st.write(f"• Soil pH: **{ph}**")
     st.write(f"• Moisture: **{moisture}%**")
-    st.write(f"• Temp: **{temperature} °C**")
+    st.write(f"• Temperature: **{temperature}°C**")
     st.write(f"• Crop: **{crop}**")
     st.write(f"• Planting Date: **{plant_date.strftime('%d %b %Y')}**")
     if city:
-        st.write(f"• City: **{city}**")
+        st.write(f"• Location: **{city}**")
 
-with colB:
+with col2:
     st.subheader("🧠 Smart Suggestions")
 
-    # pH Suggestions
     if ph < 6:
-        st.warning("🔬 Soil acidic: consider treating with lime or urea.")
+        st.warning("🔬 Acidic soil: Lime or urea recommended.")
     elif ph > 8:
-        st.warning("⚗️ Soil alkaline: sulfate-based fertilizers recommended.")
+        st.warning("⚗️ Alkaline soil: Use sulfate fertilizers.")
     else:
-        st.success("✅ pH is balanced.")
+        st.success("✅ pH is within optimal range.")
 
-    # Moisture Suggestions
     if moisture < 30:
-        st.info("💧 Moisture low: irrigation recommended.")
+        st.info("💧 Moisture is low – irrigation needed.")
     else:
-        st.success("✅ Moisture adequate.")
+        st.success("✅ Moisture is adequate.")
 
-    # Temperature Suggestions
     if temperature > 35:
-        st.warning("🔥 High temp: monitor crop water needs.")
+        st.warning("🔥 High heat – increase water supply.")
 
-    # Fertilizer Guide
     st.subheader("🪴 Fertilizer Guide")
     if ph < 6:
-        st.info("Apply lime-based fertilizer (e.g., calcium carbonate).")
+        st.info("Use lime-based fertilizers (e.g., calcium carbonate).")
     elif ph > 8:
-        st.info("Use sulfate fertilizers (e.g., ammonium sulfate, potash sulfate).")
+        st.info("Use ammonium sulfate or potash sulfate.")
     else:
-        st.info("Balanced NPK (10-10-10) mix works well.")
+        st.info("Apply a balanced NPK 10-10-10 mix.")
 
-# ----------------- WATERING SCHEDULE -----------------
+# -------------- WATERING -----------------
 st.markdown("---")
 st.subheader("💧 Watering Schedule")
 if moisture < 40:
-    st.info("💧 Suggest watering **every 2–3 days** based on crop and soil type.")
+    st.info("Water every 2–3 days.")
 elif temperature > 32:
-    st.info("☀️ High temp: water daily during afternoon.")
+    st.info("Water daily in high heat.")
 else:
-    st.success("✅ Current moisture and temperature support a 3–4 day watering cycle.")
+    st.success("Watering cycle: 3–4 days.")
 
-# ----------------- PLANTING SUPPLEMENTS -----------------
+# -------------- SUPPLEMENTS -----------------
 st.markdown("---")
-st.subheader("🧪 Required Supplements at Planting")
+st.subheader("🧪 Planting Supplements")
 if crop == "Wheat":
-    st.info("Apply DAP + organic compost at seed level.")
+    st.info("Apply DAP + compost at seed level.")
 elif crop == "Rice":
-    st.info("Use urea + phosphorous-based fertilizer.")
+    st.info("Urea + phosphorous fertilizer needed.")
 elif crop == "Tomato":
-    st.info("Add potassium nitrate and bio-fertilizers before planting.")
+    st.info("Use potassium nitrate + bio-fertilizers.")
 else:
-    st.info("Use standard NPK blend and cow dung compost.")
+    st.info("Use NPK + cow dung compost.")
 
-# ----------------- FUTURE WEEK PLANNER -----------------
+# -------------- WEEK PLANNER -----------------
 st.markdown("---")
-st.subheader("🗓️ Future Pest & Fertilizer Planner")
-current_week = (date.today() - plant_date).days // 7
+st.subheader("🗓️ Week-by-Week Planner")
+week = (date.today() - plant_date).days // 7
 
 for i in range(1, 5):
     st.markdown(f"**Week {i}:**")
     if crop == "Rice":
         st.write("🐛 Pest: Leaf folder / Stem borer")
-        st.write("🌿 Fertilizer: Top dress with Urea in week 2–3")
+        st.write("🌿 Fertilizer: Urea top dressing (Week 2–3)")
     elif crop == "Wheat":
         st.write("🐛 Pest: Aphids / Armyworm")
-        st.write("🌿 Fertilizer: Apply nitrogen fertilizer in week 2")
+        st.write("🌿 Fertilizer: Nitrogen in Week 2")
     elif crop == "Tomato":
         st.write("🐛 Pest: Fruit borer / Whiteflies")
-        st.write("🌿 Fertilizer: Potash spray recommended")
+        st.write("🌿 Fertilizer: Potash spray")
     else:
-        st.write("🐛 Pest: General worm types, watch leaves closely")
-        st.write("🌿 Fertilizer: Rotate NPK every 2 weeks")
+        st.write("🐛 Pest: Monitor leaves for worms")
+        st.write("🌿 Fertilizer: Rotate NPK bi-weekly")
     st.markdown("---")
 
-# ----------------- WEATHER & SEED SUGGESTION -----------------
+# -------------- WEATHER -----------------
 if city:
     weather = get_weather(city)
     if weather:
-        st.subheader("☁️ Live Weather Report")
+        st.subheader("☁️ Live Weather")
         st.success(f"{weather['temp']}°C, {weather['humidity']}% humidity, {weather['desc'].title()}")
 
-        st.subheader("🌱 Suggested Seeds")
+        st.subheader("🌱 Seed Suggestions")
         if weather["temp"] > 30:
-            st.info("Recommend: **Millets or Sorghum**")
+            st.info("Recommended: Millets or Sorghum")
         elif weather["humidity"] > 70:
-            st.info("Recommend: **Rice or Sugarcane**")
+            st.info("Recommended: Rice or Sugarcane")
         else:
-            st.info("Recommend: **Wheat or Soybean**")
+            st.info("Recommended: Wheat or Soybean")
     else:
-        st.error("❌ Could not fetch weather from location.")
+        st.error("❌ Could not fetch weather data.")
 else:
-    st.warning("📍 Enter a valid city to detect weather.")
+    st.warning("📍 Enter a valid city for weather.")
 
-# ----------------- WEED IMAGE UPLOAD -----------------
+# -------------- WEED IMAGE -----------------
 st.markdown("---")
 st.subheader("📸 Weed Detection & Pesticide Advice")
-upload = st.file_uploader("Upload weed image (jpg/png)", type=["jpg", "jpeg", "png"])
+
+upload = st.file_uploader("Upload weed image (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
 
 if upload is not None:
-    st.image(upload.getvalue(), caption="Uploaded Image", use_container_width=True)
-    st.warning("Detected weed: *General Broadleaf Weed*")
-    st.info("Suggested pesticide: Glyphosate or 2,4-D")
+    try:
+        image = Image.open(upload)
+        st.image(image, caption="Uploaded Image", use_container_width=True)
+        st.warning("Detected weed: *General Broadleaf Weed*")
+        st.info("Suggested pesticide: Glyphosate or 2,4-D")
+    except Exception as e:
+        st.error(f"❌ Error displaying image: {e}")
 
-# ----------------- FOOTER -----------------
+# -------------- FOOTER -----------------
 st.markdown("---")
 st.caption("🚀 Built with ❤️ using Streamlit | Smart Farming Partner 2025")
 
