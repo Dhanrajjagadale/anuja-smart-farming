@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 import requests
 from datetime import datetime, date
@@ -5,16 +6,32 @@ from PIL import Image
 from ultralytics import YOLO
 import numpy as np
 
-# ---------- Load YOLO Model ----------
-model_path = "weights/weed_best.pt"  # Update as needed
-model = YOLO(model_path)
+# ---------------- CONFIG ----------------
+st.set_page_config(
+    page_title="Smart Farming Partner",
+    page_icon="🌾",
+    layout="wide"
+)
 
-# ---------- Streamlit Config ----------
-st.set_page_config(page_title="Smart Farming Partner", page_icon="🌾", layout="wide")
+# Load Logo (optional)
+try:
+    logo = Image.open("assets/anuja_logo.png")
+    st.sidebar.image(logo, width=150)
+except Exception:
+    st.sidebar.write("🌱 Smart Farming Partner")
 
-# ---------- Weather API ----------
-def get_weather(city):
-    api_key = st.secrets["weather_api"] if "weather_api" in st.secrets else "YOUR_API_KEY"
+# Load YOLO Model
+MODEL_PATH = "weights/weed_best.pt"
+try:
+    model = YOLO(MODEL_PATH)
+except Exception as e:
+    st.error(f"⚠️ Could not load YOLO model: {e}")
+    model = None
+
+# ---------------- WEATHER API ----------------
+def get_weather(city: str):
+    """Fetch weather data from OpenWeatherMap"""
+    api_key = st.secrets.get("weather_api", "YOUR_API_KEY")
     url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
     try:
         res = requests.get(url, timeout=5)
@@ -25,10 +42,11 @@ def get_weather(city):
                 "humidity": data["main"]["humidity"],
                 "desc": data["weather"][0]["description"]
             }
-    except:
-        return None
+    except Exception as e:
+        st.error(f"Weather fetch error: {e}")
+    return None
 
-# ---------- Sidebar Inputs ----------
+# ---------------- SIDEBAR INPUTS ----------------
 with st.sidebar:
     st.header("🔍 Field & Crop Inputs")
     ph = st.slider("Soil pH", 3.5, 9.0, 6.5)
@@ -38,13 +56,14 @@ with st.sidebar:
     plant_date = st.date_input("📆 Planting Date", value=datetime.today())
     city = st.text_input("🌍 Your City")
 
-# ---------- Main Layout ----------
+# ---------------- MAIN APP ----------------
 st.title("🌱 Smart Farming Partner")
 st.markdown("#### Location-based, crop-specific guidance for smarter farming.")
 st.markdown("---")
 
 col1, col2 = st.columns(2)
 
+# ---- Input Summary ----
 with col1:
     st.subheader("📥 Input Summary")
     st.write(f"• Soil pH: **{ph}**")
@@ -55,6 +74,7 @@ with col1:
     if city:
         st.write(f"• Location: **{city}**")
 
+# ---- Smart Suggestions ----
 with col2:
     st.subheader("🧠 Smart Suggestions")
     if ph < 6:
@@ -63,17 +83,19 @@ with col2:
         st.warning("⚗️ Soil alkaline: Use sulfate fertilizers.")
     else:
         st.success("✅ pH is optimal.")
+
     if moisture < 30:
         st.info("💧 Moisture low – irrigate urgently.")
     else:
         st.success("✅ Moisture sufficient.")
+
     if temperature > 35:
         st.warning("🔥 High temp – increase watering.")
 
     st.subheader("🪴 Fertilizer Guide")
     st.info("Recommended: NPK mix or crop-specific blend.")
 
-# ---------- Watering Schedule ----------
+# ---------------- WATERING ----------------
 st.markdown("---")
 st.subheader("💧 Watering Schedule")
 if moisture < 40:
@@ -83,19 +105,20 @@ elif temperature > 32:
 else:
     st.success("Watering cycle: 3–4 days.")
 
-# ---------- Planting Supplements ----------
+# ---------------- SUPPLEMENTS ----------------
 st.markdown("---")
 st.subheader("🧪 Planting Supplements")
-if crop == "Wheat":
-    st.info("Use DAP + compost.")
-elif crop == "Rice":
-    st.info("Urea + phosphorus fertilizer.")
-elif crop == "Tomato":
-    st.info("Potassium nitrate + bio-fertilizer.")
-else:
-    st.info("Use NPK + cow dung compost.")
+supplements = {
+    "Wheat": "Use DAP + compost.",
+    "Rice": "Urea + phosphorus fertilizer.",
+    "Tomato": "Potassium nitrate + bio-fertilizer.",
+    "Soybean": "Use Rhizobium inoculant + NPK.",
+    "Sugarcane": "Nitrogen-rich fertilizer + organic compost.",
+    "Millets": "Low-input: NPK + farmyard manure."
+}
+st.info(supplements.get(crop, "Use NPK + cow dung compost."))
 
-# ---------- Weekly Planner ----------
+# ---------------- PLANNER ----------------
 st.markdown("---")
 st.subheader("🗓️ Crop Planner")
 week = (date.today() - plant_date).days // 7
@@ -105,7 +128,7 @@ for i in range(1, 5):
     st.write("🌿 Fertilizer: Rotate NPK")
     st.markdown("---")
 
-# ---------- Weather Report ----------
+# ---------------- WEATHER ----------------
 if city:
     weather = get_weather(city)
     if weather:
@@ -121,12 +144,12 @@ if city:
     else:
         st.error("❌ Weather data not available.")
 
-# ---------- Weed Detection with YOLOv8 ----------
+# ---------------- WEED DETECTION ----------------
 st.markdown("---")
 st.subheader("📸 Weed Detection & Pesticide Advice")
 
 upload = st.file_uploader("Upload weed image", type=["jpg", "jpeg", "png"])
-if upload is not None:
+if upload is not None and model:
     try:
         image = Image.open(upload).convert("RGB")
         image_np = np.array(image)
@@ -151,9 +174,6 @@ if upload is not None:
     except Exception as e:
         st.error(f"❌ Detection failed: {e}")
 
-# ---------- Footer ----------
+# ---------------- FOOTER ----------------
 st.markdown("---")
 st.caption("🚀 Smart Farming Partner · YOLOv8 Edition · Built with ❤️ using Streamlit")
-
-
-

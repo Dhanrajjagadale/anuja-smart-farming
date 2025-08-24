@@ -1,6 +1,6 @@
-HEAD
-streamlit
-requests
-streamlit
-pillow
-8465851
+streamlit==1.37.0
+requests==2.31.0
+Pillow==10.2.0
+ultralytics==8.2.0
+numpy==1.26.4
+
