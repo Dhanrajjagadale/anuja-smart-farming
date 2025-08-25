@@ -1,7 +1,14 @@
-﻿.venv/
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS
 .DS_Store
-*.ipynb_checkpoints
-# If your YOLO weight is large, prefer Git LFS (see step 1b)
-weights/*.pt
+Thumbs.db
